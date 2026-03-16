@@ -90,6 +90,7 @@ z-index:5;
 <button onclick="searchWiki()">Wiki</button>
 <button onclick="searchShouten()">shouten</button>
 <button onclick="search1Choume()">1chome</button>
+<button onclick="syncGoogle()">☁ Sync Google</button>
 
 <span id="editingInfo" class="editing-text"></span>
 <hr>
@@ -264,7 +265,16 @@ item.realProfit = item.status==="Đã bán" ? (item.sellPrice - realCostPerItem)
 return item;
 }
 
-function saveLocal(){ localStorage.setItem("DATA_SAFE",JSON.stringify(data)); }
+function saveLocal(){
+
+localStorage.setItem("DATA_SAFE",JSON.stringify(data));
+
+fetch(url,{
+method:"POST",
+body:JSON.stringify(data)
+});
+
+}
 
 
 function addItem(){
@@ -652,6 +662,40 @@ return;
 let url = "https://www.1-chome.com/";  
 
 }
+
+function syncGoogle(){
+
+const url="https://script.google.com/macros/s/AKfycbwbr_YbH0E-rehNVu9k_a3Q-icJgNjGy9fnrZuYqVSVz7eL6WDM42XPqAdA3Ec1q-DfuQ/exec";
+
+fetch(url,{
+method:"POST",
+body:JSON.stringify(data)
+})
+.then(res=>res.text())
+.then(()=>alert("Đã lưu dữ liệu lên Google"))
+.catch(()=>alert("Sync lỗi"));
+
+}
+
+async function loadGoogle(){
+
+let res = await fetch(url);
+
+let json = await res.json();
+
+if(json.length){
+
+data=json;
+
+localStorage.setItem("DATA_SAFE",JSON.stringify(data));
+
+renderTable();
+
+}
+
+}
+
+loadGoogle();
 
 renderTable();
 
