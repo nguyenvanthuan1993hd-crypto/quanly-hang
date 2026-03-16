@@ -236,6 +236,7 @@ Lọc sàn:
 
 let data = JSON.parse(localStorage.getItem("DATA_SAFE")) || [];
 let editIndex = -1;
+const url="https://script.google.com/macros/s/AKfycbwfBmqF-5X6frn_2Ey5kvJpVbmxZXHxdx6JLc9bpRdR7k3-5pnwLK-LxtWKN62b5w4Q1Q/exec";
 
 const buyDate = document.getElementById("buyDate");
 const account = document.getElementById("account");
@@ -679,17 +680,24 @@ body:JSON.stringify(data)
 
 async function loadGoogle(){
 
-let res = await fetch(url);
+try{
 
+let res = await fetch(url);
 let json = await res.json();
 
-if(json.length){
+if(json && json.length){
 
 data=json;
 
 localStorage.setItem("DATA_SAFE",JSON.stringify(data));
 
 renderTable();
+
+}
+
+}catch(e){
+
+console.log("Google load lỗi");
 
 }
 
