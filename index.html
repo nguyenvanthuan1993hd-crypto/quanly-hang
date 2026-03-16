@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,7 +7,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
 body{font-family:Arial;margin:20px;font-size:14px;}
@@ -45,6 +43,7 @@ border:1px solid #ccc;
 
 .table-container table{
 width:100%;
+table-layout:auto;
 border-collapse:collapse;
 }
 
@@ -67,6 +66,10 @@ z-index:5;
 .profit-positive{color:green;font-weight:bold;}
 .profit-negative{color:red;font-weight:bold;}
 .selected-row{background:#fff3cd !important;}
+.editing-text{color:red;font-weight:bold;margin-left:15px;}
+.sold-row{background:#f1f1f1;color:#999;}
+.filter-bar{margin-bottom:10px;}
+.text-red { color: red; font-weight: bold; }
 </style>
 </head>
 
@@ -74,56 +77,49 @@ z-index:5;
 
 <h2>Quản lý</h2>
 
-<button onclick="addItem()">➕ Thêm</button>
+<button onclick="addItem()">➕ Thêm / Cập nhật</button>
+<button onclick="cancelEdit()">❎ Hủy</button>
 <button onclick="editSelected()">📝 Sửa</button>
-<button onclick="copySelected()">📋 Copy</button>
+<button onclick="copySelected()">📋 Sao chép</button>
 <button onclick="deleteSelected()">❌ Xóa</button>
 <button onclick="overwriteBackup()">💾 Backup</button>
 <button onclick="restoreBackup()">Restore</button>
-<button onclick="exportPDF()">PDF</button>
-<button onclick="exportExcel()">Excel</button>
-<button onclick="searchAll()">🔎 Kaitori</button>
-<button onclick="syncGoogle()">☁ Sync Google</button>
+<button onclick="exportPDF()">Xuất PDF</button>
+<button onclick="exportExcel()">Xuất Excel</button>
+<button onclick="searchKai()">🔎 Tra Kai</button>
+<button onclick="searchWiki()">Wiki</button>
+<button onclick="searchShouten()">shouten</button>
+<button onclick="search1Choume()">1chome</button>
 
+<span id="editingInfo" class="editing-text"></span>
 <hr>
 
 <div id="formContainer">
-
 <div class="form-row">
-
 <input type="date" id="buyDate">
 
 <select id="account">
 <option value="">Tài khoản</option>
-<option>Chính</option>
+<option value="Chính">Chính</option>
 <script>
 for(let i=1;i<=50;i++){
-document.write(`<option>Tài khoản ${i}</option>`);
+document.write(`<option value="Tài khoản ${i}">Tài khoản ${i}</option>`);
 }
 </script>
 </select>
 
-<textarea id="jan" placeholder="JAN"></textarea>
-
-<button onclick="startScan()">📷 Scan</button>
-
-<textarea id="name" placeholder="Tên"></textarea>
-
+<textarea id="jan" rows="2" placeholder="JAN"></textarea>
+<textarea id="name" rows="2" placeholder="Tên sản phẩm"></textarea>
 </div>
 
-<div id="reader" style="width:300px"></div>
-
 <div class="form-row">
-
 <input type="number" id="buyPrice" placeholder="Giá mua">
 <input type="number" id="point" placeholder="Point">
 <input type="number" id="quantity" placeholder="SL" value="1">
 <input type="number" id="kaiBuyPrice" placeholder="Giá dự kiến">
-
 </div>
 
 <div class="form-row">
-
 <input type="number" id="sellPrice" placeholder="Giá bán">
 
 <select id="platform">
@@ -136,350 +132,526 @@ document.write(`<option>Tài khoản ${i}</option>`);
 <input type="text" id="kai" placeholder="Bán cho">
 
 <select id="status">
+<option>Chờ nhận</option>
 <option>Chưa bán</option>
+<option>Đã yyk</option>
 <option>Đã bán</option>
 <option>Đã hủy</option>
 </select>
-
 </div>
 
 <div class="form-row">
-<textarea id="note" placeholder="Ghi chú"></textarea>
+<textarea id="note" rows="2" placeholder="Ghi chú"></textarea>
 </div>
+</div>
+
+
+<div class="filter-bar">
+
+Lọc ngày:
+<select id="filterDate" onchange="renderTable()">
+<option value="">Tất cả</option>
+</select>
+
+Lọc tháng:
+<select id="filterMonth" onchange="renderTable()">
+<option value="">Tất cả</option>
+<script>
+for(let i=1;i<=12;i++){
+let m=i.toString().padStart(2,'0');
+document.write(`<option value="${m}">${m}</option>`);
+}
+</script>
+</select>
+
+Lọc tài khoản:
+<select id="filterAccount" onchange="renderTable()">
+<option value="">Tất cả</option>
+<option value="Chính">Chính</option>
+<script>
+for(let i=1;i<=50;i++){
+document.write(`<option value="Tài khoản ${i}">Tài khoản ${i}</option>`);
+}
+</script>
+</select>
+
+Lọc tình trạng:
+<select id="filterStatus" onchange="renderTable()">
+<option value="">Tất cả</option>
+<option>Chờ nhận</option>
+<option>Chưa bán</option>
+<option>Đã bán</option>
+<option>Đã yyk</option>
+<option>Đã hủy</option>
+</select>
+
+Lọc sàn:
+<select id="filterPlatform" onchange="renderTable()">
+<option value="">Tất cả</option>
+<option>Yh</option>
+<option>Amz</option>
+<option>Rkt</option>
+</select>
 
 </div>
 
 
 <div id="exportArea">
-
 <div class="table-container">
-
 <table>
-
 <thead>
-
 <tr>
 <th>✔</th>
 <th>STT</th>
+<th>Sàn</th>
 <th>Ngày</th>
-<th>TK</th>
+<th>Tài khoản</th>
 <th>JAN</th>
 <th>Tên</th>
 <th>Giá mua</th>
 <th>Point</th>
+<th>Mopy</th>
 <th>SL</th>
 <th>Giá dự kiến</th>
 <th>Giá bán</th>
+<th>Bán cho</th>
+<th>Ghi chú</th>
 <th>Tình trạng</th>
 <th>LN dự kiến</th>
 <th>LN thực</th>
 </tr>
-
 </thead>
-
 <tbody id="tableBody"></tbody>
-
 </table>
-
 </div>
 
 <h3 id="summary"></h3>
-
 </div>
 
 <input type="file" id="restoreFile" style="display:none">
 
+
 <script>
 
-const url="https://script.google.com/macros/s/AKfycbwfBmqF-5X6frn_2Ey5kvJpVbmxZXHxdx6JLc9bpRdR7k3-5pnwLK-LxtWKN62b5w4Q1Q/exec";
+let data = JSON.parse(localStorage.getItem("DATA_SAFE")) || [];
+let editIndex = -1;
 
-let data=JSON.parse(localStorage.getItem("DATA_SAFE"))||[];
-let editIndex=-1;
+const buyDate = document.getElementById("buyDate");
+const account = document.getElementById("account");
+const jan = document.getElementById("jan");
+const nameInput = document.getElementById("name");
+const buyPrice = document.getElementById("buyPrice");
+const point = document.getElementById("point");
+const quantity = document.getElementById("quantity");
+const kaiBuyPrice = document.getElementById("kaiBuyPrice");
+const sellPrice = document.getElementById("sellPrice");
+const platform = document.getElementById("platform");
+const kai = document.getElementById("kai");
+const note = document.getElementById("note");
+const status = document.getElementById("status");
 
 const tableBody=document.getElementById("tableBody");
 const summary=document.getElementById("summary");
+const editingInfo=document.getElementById("editingInfo");
+const restoreFile=document.getElementById("restoreFile");
+
 
 function calculateProfit(item){
-
-let cost=item.buyPrice-item.point;
-
-item.expectedProfit=(item.kaiBuyPrice-cost)*item.quantity;
-
-item.realProfit=item.status==="Đã bán"
-?(item.sellPrice-cost)*item.quantity
-:0;
-
+let realCostPerItem = item.buyPrice - item.point;
+item.mopy = item.buyPrice*0.01*item.quantity;
+item.expectedProfit = (item.kaiBuyPrice - realCostPerItem)*item.quantity;
+item.realProfit = item.status==="Đã bán" ? (item.sellPrice - realCostPerItem)*item.quantity : 0;
 return item;
-
 }
 
-function saveLocal(){
+function saveLocal(){ localStorage.setItem("DATA_SAFE",JSON.stringify(data)); }
 
-localStorage.setItem("DATA_SAFE",JSON.stringify(data));
-
-fetch(url,{
-method:"POST",
-body:JSON.stringify(data)
-});
-
-}
 
 function addItem(){
 
-let item={
+if(editIndex !== -1){
+let oldStatus = data[editIndex].status;
+if(oldStatus === "Đã bán" && status.value !== "Đã bán"){
+alert("Dòng đã bán không thể đổi lại trạng thái");
+return;
+}
+}
 
-buyDate:buyDate.value,
-account:account.value,
-jan:jan.value,
-name:name.value,
-buyPrice:Number(buyPrice.value),
-point:Number(point.value),
-quantity:Number(quantity.value),
-kaiBuyPrice:Number(kaiBuyPrice.value),
-sellPrice:Number(sellPrice.value)||0,
-status:status.value
+if(!buyDate.value || !account.value || !jan.value || !nameInput.value || !buyPrice.value || !point.value || !kaiBuyPrice.value){
+alert("Nhập đủ thông tin bắt buộc"); return;
+}
 
+let item = {
+id: editIndex !== -1 ? data[editIndex].id : Date.now(),
+buyDate: buyDate.value,
+account: account.value,
+jan: jan.value,
+name: nameInput.value,
+buyPrice: Number(buyPrice.value),
+point: Number(point.value),
+quantity: Number(quantity.value)||1,
+kaiBuyPrice: Number(kaiBuyPrice.value),
+sellPrice: Number(sellPrice.value)||0,
+platform: platform.value,
+kai: kai.value,
+note: note.value,
+status: status.value
 };
 
-item=calculateProfit(item);
+item = calculateProfit(item);
 
-data.unshift(item);
+if(editIndex !== -1){ data[editIndex] = item; }
+else { data.unshift(item); }
 
+editIndex=-1;
+editingInfo.innerText="";
 saveLocal();
-
+clearForm();
 renderTable();
-
 }
+
 
 function renderTable(){
 
-tableBody.innerHTML="";
+updateDateFilter();
+tableBody.innerHTML = "";
+let totalReal = 0, totalExpected = 0, totalMopy = 0, totalBuy = 0, stt = 1;
 
-let totalReal=0;
-let totalExpected=0;
+const month = document.getElementById("filterMonth").value;
+const accFilter = document.getElementById("filterAccount").value;
+const statusFilter = document.getElementById("filterStatus").value;
+const platformFilter = document.getElementById("filterPlatform").value;
+const dateFilter = document.getElementById("filterDate").value;
 
-data.forEach((item,i)=>{
+let filteredData = data.filter(item => {
+if(month && item.buyDate.slice(5,7) !== month) return false;
+if(accFilter && item.account !== accFilter) return false;
+if(statusFilter && item.status !== statusFilter) return false;
+if(platformFilter && item.platform !== platformFilter) return false;
+if(dateFilter && item.buyDate !== dateFilter) return false;
+return true;
+});
 
-item=calculateProfit(item);
+filteredData.sort((a,b) => new Date(b.buyDate) - new Date(a.buyDate));
 
-totalReal+=item.realProfit;
-totalExpected+=item.expectedProfit;
+filteredData.forEach(item => {
 
-tableBody.innerHTML+=`
+item = calculateProfit(item);
 
-<tr>
+if(item.status !== "Đã hủy"){
+totalReal += item.realProfit;
+totalExpected += item.expectedProfit;
+totalMopy += item.mopy;
+totalBuy += item.buyPrice * item.quantity;
+}
 
-<td><input type="checkbox" class="rowCheck" value="${i}"></td>
-<td>${i+1}</td>
+let expectedPercent = ((item.expectedProfit / (item.buyPrice * item.quantity)) * 100).toFixed(1);
+let realPercent = ((item.realProfit / (item.buyPrice * item.quantity)) * 100).toFixed(1);
+
+tableBody.innerHTML += `
+<tr data-index="${data.indexOf(item)}" class="${item.status==='Đã bán'?'sold-row':''}">
+<td><input type="checkbox" class="rowCheck" value="${data.indexOf(item)}" onchange="handleCheck(this)"></td>
+<td>${stt++}</td>
+<td>${item.platform||""}</td>
 <td>${item.buyDate}</td>
 <td>${item.account}</td>
 <td>${item.jan}</td>
 <td>${item.name}</td>
 <td>${item.buyPrice}</td>
 <td>${item.point}</td>
+<td>${item.mopy.toFixed(0)}</td>
 <td>${item.quantity}</td>
 <td>${item.kaiBuyPrice}</td>
 <td>${item.sellPrice}</td>
-<td>${item.status}</td>
-<td>${item.expectedProfit}</td>
-<td>${item.realProfit}</td>
-
-</tr>
-
-`;
-
+<td>${item.kai}</td>
+<td>${item.note}</td>
+<td class="${item.status==='Chưa bán' ? 'text-red' : ''}">${item.status}</td>
+<td class="${item.expectedProfit<0?'profit-negative':'profit-positive'}">
+${item.expectedProfit} (${expectedPercent}%)
+</td>
+<td class="${item.realProfit<0?'profit-negative':'profit-positive'}">
+${item.realProfit} (${realPercent}%)
+</td>
+</tr>`;
 });
 
-summary.innerHTML=
-"LN dự kiến: "+totalExpected+" | LN thực: "+totalReal;
+let percent = totalBuy > 0 ? ((totalReal / totalBuy) * 100).toFixed(1) : 0;
+let percentExpected = totalBuy > 0 ? ((totalExpected / totalBuy) * 100).toFixed(1) : 0;
 
+summary.innerHTML =
+"Tổng Mopy: " + totalMopy.toFixed(0) +
+" | Tổng tiền mua: " + totalBuy +
+" | Tổng LN dự kiến: " + totalExpected + " (" + percentExpected + "%)" +
+" | Tổng LN thực: " + totalReal + " (" + percent + "%)";
+}
+
+
+function handleCheck(cb){
+document.querySelectorAll(".rowCheck").forEach(x=>{if(x!==cb)x.checked=false;});
+document.querySelectorAll("tr").forEach(tr=>tr.classList.remove("selected-row"));
+if(cb.checked) cb.closest("tr").classList.add("selected-row");
 }
 
 function getSelectedIndex(){
-
-let c=document.querySelector(".rowCheck:checked");
-
-if(!c){alert("Chọn dòng");return null;}
-
-return Number(c.value);
-
+let checked=document.querySelector(".rowCheck:checked");
+if(!checked){alert("Chọn 1 dòng");return null;}
+return Number(checked.value);
 }
 
 function editSelected(){
-
-let i=getSelectedIndex();
-
-if(i===null)return;
-
-let item=data[i];
-
-buyDate.value=item.buyDate;
-account.value=item.account;
-jan.value=item.jan;
-name.value=item.name;
-buyPrice.value=item.buyPrice;
-point.value=item.point;
-quantity.value=item.quantity;
-kaiBuyPrice.value=item.kaiBuyPrice;
-sellPrice.value=item.sellPrice;
-status.value=item.status;
-
-editIndex=i;
-
+let index=getSelectedIndex();
+if(index===null)return;
+editIndex=index;
+let item=data[index];
+Object.keys(item).forEach(k=>{
+if(document.getElementById(k))
+document.getElementById(k).value=item[k];
+});
+editingInfo.innerText="Đang sửa dòng số "+(editIndex+1);
 }
 
 function copySelected(){
-
-let i=getSelectedIndex();
-
-if(i===null)return;
-
-data.unshift({...data[i]});
-
+let index=getSelectedIndex();
+if(index===null)return;
+let newItem={...data[index],id:Date.now()};
+data.unshift(newItem);
 saveLocal();
 renderTable();
-
 }
 
 function deleteSelected(){
-
-let i=getSelectedIndex();
-
-if(i===null)return;
-
-data.splice(i,1);
-
+let index=getSelectedIndex();
+if(index===null)return;
+if(confirm("Xóa dòng đã chọn?")){
+data.splice(index,1);
 saveLocal();
 renderTable();
-
+}
 }
 
-function overwriteBackup(){
+function updateDateFilter(){
 
-let blob=new Blob([JSON.stringify(data,null,2)]);
+let select = document.getElementById("filterDate");
 
-let a=document.createElement("a");
+let dates = [...new Set(data.map(x=>x.buyDate))].sort((a,b)=>b.localeCompare(a));
 
-a.href=URL.createObjectURL(blob);
+let current = select.value;
 
-a.download="backup.json";
+select.innerHTML = '<option value="">Tất cả</option>';
 
-a.click();
-
-}
-
-const restoreFile=document.getElementById("restoreFile");
-
-function restoreBackup(){
-restoreFile.click();
-}
-
-restoreFile.addEventListener("change",function(){
-
-let reader=new FileReader();
-
-reader.onload=e=>{
-
-data=JSON.parse(e.target.result);
-
-saveLocal();
-
-renderTable();
-
-};
-
-reader.readAsText(this.files[0]);
-
+dates.forEach(d=>{
+let op=document.createElement("option");
+op.value=d;
+op.textContent=d;
+select.appendChild(op);
 });
 
-async function exportPDF(){
-
-const {jsPDF}=window.jspdf;
-
-let canvas=await html2canvas(exportArea);
-
-let pdf=new jsPDF("l","mm","a4");
-
-pdf.addImage(canvas.toDataURL("image/png"),"PNG",10,10,280,canvas.height*280/canvas.width);
-
-pdf.save("report.pdf");
+select.value=current;
 
 }
+
+function cancelEdit(){
+editIndex=-1;
+editingInfo.innerText="";
+clearForm();
+clearSelection();
+}
+
+function clearForm(){
+document.querySelectorAll("input,textarea").forEach(el=>el.value="");
+document.querySelectorAll("select").forEach(el=>el.selectedIndex=0);
+quantity.value=1;
+}
+
+function clearSelection(){
+document.querySelectorAll(".rowCheck").forEach(cb=>cb.checked=false);
+document.querySelectorAll("tr").forEach(tr=>tr.classList.remove("selected-row"));
+}
+
+
+overwriteBackup=()=>{
+let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+let link=document.createElement("a");
+link.href=URL.createObjectURL(blob);
+link.download="backup.json";
+link.click();
+}
+
+restoreBackup=()=>restoreFile.click();
+
+restoreFile.addEventListener("change",function(){
+let reader=new FileReader();
+reader.onload=e=>{
+data=JSON.parse(e.target.result);
+saveLocal();
+renderTable();
+alert("Restore OK");
+};
+reader.readAsText(this.files[0]);
+});
+
+
+async function exportPDF(){
+document.querySelectorAll("th:first-child, td:first-child").forEach(el=>el.style.display="none");
+const {jsPDF}=window.jspdf;
+let canvas=await html2canvas(exportArea,{scale:2});
+let pdf=new jsPDF("l","mm","a4");
+pdf.addImage(canvas.toDataURL("image/png"),"PNG",10,20,280,canvas.height*280/canvas.width);
+pdf.save("report.pdf");
+document.querySelectorAll("th:first-child, td:first-child").forEach(el=>el.style.display="");
+}
+
 
 function exportExcel(){
 
-let ws=XLSX.utils.json_to_sheet(data);
+const month = document.getElementById("filterMonth").value;
+const accFilter = document.getElementById("filterAccount").value;
+const statusFilter = document.getElementById("filterStatus").value;
+const platformFilter = document.getElementById("filterPlatform").value;
 
-let wb=XLSX.utils.book_new();
-
-XLSX.utils.book_append_sheet(wb,ws,"data");
-
-XLSX.writeFile(wb,"report.xlsx");
-
-}
-
-function searchAll(){
-
-let code=jan.value;
-
-window.open("https://kaitori.app/#"+code);
-window.open("https://gamekaitori.jp/search?q="+code);
-window.open("https://www.kaitorishouten-co.jp/#"+code);
-
-}
-
-function startScan(){
-
-const scanner=new Html5Qrcode("reader");
-
-scanner.start(
-{facingMode:"environment"},
-{fps:10,qrbox:250},
-(code)=>{
-
-jan.value=code;
-
-scanner.stop();
-
-document.getElementById("reader").innerHTML="";
-
-}
-);
-
-}
-
-function syncGoogle(){
-
-fetch(url,{
-method:"POST",
-body:JSON.stringify(data)
+let filteredData = data.filter(item => {
+if(month && item.buyDate.slice(5,7) !== month) return false;
+if(accFilter && item.account !== accFilter) return false;
+if(statusFilter && item.status !== statusFilter) return false;
+if(platformFilter && item.platform !== platformFilter) return false;
+return true;
 });
 
+filteredData.sort((a,b) => new Date(b.buyDate) - new Date(a.buyDate));
+
+let totalBuy = 0;
+let totalExpected = 0;
+let totalReal = 0;
+let totalMopy = 0;
+let totalPoint = 0;
+
+let excelData = filteredData.map(item=>{
+
+item = calculateProfit(item);
+
+let expectedPercent = ((item.expectedProfit / (item.buyPrice * item.quantity)) * 100).toFixed(1);
+let realPercent = ((item.realProfit / (item.buyPrice * item.quantity)) * 100).toFixed(1);
+
+if(item.status !== "Đã hủy"){
+totalBuy += item.buyPrice * item.quantity;
+totalExpected += item.expectedProfit;
+totalReal += item.realProfit;
+totalMopy += item.mopy;
+totalPoint += item.point;
 }
 
-async function loadGoogle(){
+return {
+San: item.platform,
+Ngay: item.buyDate,
+TaiKhoan: item.account,
+JAN: item.jan,
+Ten: item.name,
+GiaMua: item.buyPrice,
+Point: item.point,
+Mopy: item.mopy.toFixed(0),
+SL: item.quantity,
+GiaDuKien: item.kaiBuyPrice,
+GiaBan: item.sellPrice,
+BanCho: item.kai,
+GhiChu: item.note,
+TinhTrang: item.status,
+LN_DuKien: item.expectedProfit + " (" + expectedPercent + "%)",
+LN_Thuc: item.realProfit + " (" + realPercent + "%)"
+};
+});
 
-try{
+let percent = totalBuy > 0 ? ((totalReal / totalBuy) * 100).toFixed(1) : 0;
 
-let res=await fetch(url);
+excelData.push({
+San:"",
+Ngay:"",
+TaiKhoan:"",
+JAN:"",
+Ten:"TỔNG",
+GiaMua:totalBuy,
+Point:totalPoint,
+Mopy:totalMopy.toFixed(0),
+SL:"",
+GiaDuKien:"",
+GiaBan:"",
+BanCho:"",
+GhiChu:"",
+TinhTrang:"",
+LN_DuKien:totalExpected,
+LN_Thuc:totalReal+" ("+percent+"%)"
+});
 
-let json=await res.json();
+let ws = XLSX.utils.json_to_sheet(excelData);
+let wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
 
-if(json.length){
+let now = new Date();
+let year = now.getFullYear();
+let fileName;
 
-data=json;
+if(month){
+fileName = `Report_${year}_${month}.xlsx`;
+}else{
+fileName = `Report_${year}.xlsx`;
+}
 
-localStorage.setItem("DATA_SAFE",JSON.stringify(data));
+XLSX.writeFile(wb, fileName);
+}
 
-renderTable();
+function searchKai(){
+
+let janCode = jan.value.trim();
+
+if(!janCode){
+alert("Nhập mã JAN trước");
+return;
+}
+
+let url = "https://kaitori.app/#" + janCode;
+window.open(url,"_blank");
 
 }
 
-}catch(e){}
+function searchWiki(){
+
+let janCode = jan.value.trim();
+
+if(!janCode){
+alert("Nhập mã JAN trước");
+return;
+}
+
+let url = "https://gamekaitori.jp/search?type=&q=" + janCode;  
+window.open(url,"_blank");
 
 }
 
-loadGoogle();
+function searchShouten(){
+
+let janCode = jan.value.trim();
+
+if(!janCode){
+alert("Nhập mã JAN trước");
+return;
+}
+
+let url = "https://www.kaitorishouten-co.jp/#" + janCode;  
+window.open(url,"_blank");
+
+}
+
+function search1Choume(){
+
+let janCode = jan.value.trim();
+
+if(!janCode){
+alert("Nhập mã JAN trước");
+return;
+}
+
+let url = "https://www.1-chome.com/";  
+
+}
 
 renderTable();
 
@@ -487,4 +659,3 @@ renderTable();
 
 </body>
 </html>
-```
