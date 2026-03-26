@@ -147,6 +147,27 @@ document.write(`<option value="Tài khoản ${i}">Tài khoản ${i}</option>`);
 
 
 <div class="filter-bar">
+<b>Hiển thị cột:</b>
+
+<label><input type="checkbox" class="colToggle" data-col="1" checked> STT</label>
+<label><input type="checkbox" class="colToggle" data-col="2" checked> Sàn</label>
+<label><input type="checkbox" class="colToggle" data-col="3" checked> Ngày</label>
+<label><input type="checkbox" class="colToggle" data-col="4" checked> Tài khoản</label>
+<label><input type="checkbox" class="colToggle" data-col="5" checked> JAN</label>
+<label><input type="checkbox" class="colToggle" data-col="6" checked> Tên</label>
+<label><input type="checkbox" class="colToggle" data-col="7" checked> Giá mua</label>
+<label><input type="checkbox" class="colToggle" data-col="8" checked> Point</label>
+<label><input type="checkbox" class="colToggle" data-col="9" checked> Mopy</label>
+<label><input type="checkbox" class="colToggle" data-col="10" checked> SL</label>
+<label><input type="checkbox" class="colToggle" data-col="11" checked> Giá dự kiến</label>
+<label><input type="checkbox" class="colToggle" data-col="12" checked> Giá bán</label>
+<label><input type="checkbox" class="colToggle" data-col="13" checked> Bán cho</label>
+<label><input type="checkbox" class="colToggle" data-col="14" checked> Ghi chú</label>
+<label><input type="checkbox" class="colToggle" data-col="15" checked> Tình trạng</label>
+<label><input type="checkbox" class="colToggle" data-col="16" checked> LN dự kiến</label>
+<label><input type="checkbox" class="colToggle" data-col="17" checked> LN thực</label>
+
+</div>
 
 Lọc ngày:
 <select id="filterDate" onchange="renderTable()">
@@ -650,6 +671,26 @@ return;
 }
 
 let url = "https://www.1-chome.com/";  
+
+}
+
+document.querySelectorAll(".colToggle").forEach(cb=>{
+cb.addEventListener("change", toggleColumn);
+});
+
+function toggleColumn(){
+
+let checks = document.querySelectorAll(".colToggle");
+
+checks.forEach(cb=>{
+let colIndex = Number(cb.dataset.col);
+
+document.querySelectorAll("table tr").forEach(row=>{
+if(row.children[colIndex]){
+row.children[colIndex].style.display = cb.checked ? "" : "none";
+}
+});
+});
 
 }
 
