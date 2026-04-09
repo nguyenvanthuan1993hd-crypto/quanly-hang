@@ -95,6 +95,7 @@ z-index:5;
 <hr>
 
 <div id="formContainer">
+
 <div class="form-row">
 <input type="date" id="buyDate">
 
@@ -141,21 +142,22 @@ document.write(`<option value="Tài khoản ${i}">Tài khoản ${i}</option>`);
 </select>
 </div>
 
+<!-- ✅ CHỈ THÊM ĐOẠN NÀY -->
 <div class="form-row">
 <textarea id="note" rows="2" placeholder="Ghi chú"></textarea>
-</div>
+<input type="text" id="link" placeholder="Link sản phẩm">
 </div>
 
+</div>
 
 <div class="filter-bar">
 <b>Hiển thị cột:</b>
 
-<label><input type="checkbox" class="colToggle" data-col="1" checked> STT</label>
-<label><input type="checkbox" class="colToggle" data-col="6" checked> Tên</label>
-<label><input type="checkbox" class="colToggle" data-col="8" checked> Point</label>
-<label><input type="checkbox" class="colToggle" data-col="9" checked> Mopy</label>
-<label><input type="checkbox" class="colToggle" data-col="10" checked> SL</label>
-<label><input type="checkbox" class="colToggle" data-col="14" checked> Ghi chú</label>
+<label><input type="checkbox" class="colToggle" data-col="5" checked> Tên</label>
+<label><input type="checkbox" class="colToggle" data-col="7" checked> Point</label>
+<label><input type="checkbox" class="colToggle" data-col="8" checked> Mopy</label>
+<label><input type="checkbox" class="colToggle" data-col="9" checked> SL</label>
+<label><input type="checkbox" class="colToggle" data-col="13" checked> Ghi chú</label>
 
 
 </div>
@@ -215,7 +217,6 @@ Lọc sàn:
 <thead>
 <tr>
 <th>✔</th>
-<th>STT</th>
 <th>Sàn</th>
 <th>Ngày</th>
 <th>Tài khoản</th>
@@ -262,6 +263,7 @@ const platform = document.getElementById("platform");
 const kai = document.getElementById("kai");
 const note = document.getElementById("note");
 const status = document.getElementById("status");
+const link = document.getElementById("link");
 
 const tableBody=document.getElementById("tableBody");
 const summary=document.getElementById("summary");
@@ -308,7 +310,8 @@ sellPrice: Number(sellPrice.value)||0,
 platform: platform.value,
 kai: kai.value,
 note: note.value,
-status: status.value
+status: status.value,
+link: link.value
 };
 
 item = calculateProfit(item);
@@ -364,7 +367,6 @@ let realPercent = ((item.realProfit / (item.buyPrice * item.quantity)) * 100).to
 tableBody.innerHTML += `
 <tr data-index="${data.indexOf(item)}" class="${item.status==='Đã bán'?'sold-row':''}">
 <td><input type="checkbox" class="rowCheck" value="${data.indexOf(item)}" onchange="handleCheck(this)"></td>
-<td>${stt++}</td>
 <td>${item.platform||""}</td>
 <td>${item.buyDate}</td>
 <td>${item.account}</td>
@@ -412,34 +414,47 @@ return Number(checked.value);
 }
 
 function editSelected(){
-let index=getSelectedIndex();
-if(index===null)return;
-editIndex=index;
-let item=data[index];
-Object.keys(item).forEach(k=>{
-if(document.getElementById(k))
-document.getElementById(k).value=item[k];
-});
-editingInfo.innerText="Đang sửa dòng số "+(editIndex+1);
+
+let index = getSelectedIndex();
+if(index === null) return;
+
+editIndex = index;
+let item = data[index];
+
+// ✅ gán từng field (fix lỗi link 100%)
+buyDate.value = item.buyDate || "";
+account.value = item.account || "";
+jan.value = item.jan || "";
+nameInput.value = item.name || "";
+buyPrice.value = item.buyPrice || "";
+point.value = item.point || "";
+quantity.value = item.quantity || 1;
+kaiBuyPrice.value = item.kaiBuyPrice || "";
+sellPrice.value = item.sellPrice || "";
+platform.value = item.platform || "";
+kai.value = item.kai || "";
+note.value = item.note || "";
+status.value = item.status || "";
+
+// ⭐ QUAN TRỌNG
+link.value = item.link || "";
+
+editingInfo.innerText = "Đang sửa dòng số " + (index + 1);
+
 }
 
 function copySelected(){
 let index=getSelectedIndex();
 if(index===null)return;
-let newItem={...data[index],id:Date.now()};
+
+let newItem={...data[index], id:Date.now()};
+
+// ❗ reset link để tránh bị trùng
+newItem.link = "";
+
 data.unshift(newItem);
 saveLocal();
 renderTable();
-}
-
-function deleteSelected(){
-let index=getSelectedIndex();
-if(index===null)return;
-if(confirm("Xóa dòng đã chọn?")){
-data.splice(index,1);
-saveLocal();
-renderTable();
-}
 }
 
 function updateDateFilter(){
@@ -471,9 +486,17 @@ clearSelection();
 }
 
 function clearForm(){
-document.querySelectorAll("input,textarea").forEach(el=>el.value="");
+
+document.querySelectorAll("input,textarea").forEach(el=>{
+el.value="";
+});
+
 document.querySelectorAll("select").forEach(el=>el.selectedIndex=0);
+
 quantity.value=1;
+
+// ❗ link tự reset riêng (nếu muốn)
+link.value = "";
 }
 
 function clearSelection(){
@@ -569,7 +592,8 @@ BanCho: item.kai,
 GhiChu: item.note,
 TinhTrang: item.status,
 LN_DuKien: item.expectedProfit + " (" + expectedPercent + "%)",
-LN_Thuc: item.realProfit + " (" + realPercent + "%)"
+LN_Thuc: item.realProfit + " (" + realPercent + "%)",
+Link: item.link || ""
 };
 });
 
