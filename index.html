@@ -782,6 +782,22 @@ function closeQuickCalc(){
 document.getElementById("quickCalcModal").style.display="none";
 }
 
+function deleteSelected(){
+
+let index = getSelectedIndex();
+if(index === null) return;
+
+if(!confirm("Xóa dòng này?")) return;
+
+data.splice(index,1);
+
+saveLocal();
+renderTable();
+clearSelection();
+cancelEdit();
+
+}
+
 function calculateQuick(){
 
 let buy = Number(document.getElementById("qc_buy").value) || 0;
