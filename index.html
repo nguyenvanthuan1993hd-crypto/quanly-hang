@@ -69,6 +69,76 @@ background:#eee;
 z-index:5;
 }
 
+#quickCalcModal{
+display:none;
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,0.4);
+z-index:999;
+}
+
+#quickCalcBox{
+background:#fff;
+padding:15px;
+border-radius:10px;
+
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+
+min-width:260px;
+max-width:90vw;
+
+box-shadow:0 5px 20px rgba(0,0,0,0.2);
+}
+
+#quickCalcHeader{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:10px;
+}
+
+#quickCalcHeader h3{
+margin:0;
+font-size:16px;
+}
+
+#quickCalcHeader button{
+background:red;
+color:white;
+border:none;
+border-radius:5px;
+padding:3px 8px;
+cursor:pointer;
+}
+
+#quickCalcModal input{
+width:100%;
+margin:5px 0;
+padding:6px;
+text-align:left;
+}
+
+.calc-btn{
+width:100%;
+background:#007bff;
+color:white;
+border:none;
+padding:7px;
+margin-top:8px;
+border-radius:6px;
+cursor:pointer;
+}
+
+#qc_result{
+margin-top:10px;
+text-align:left;
+font-weight:bold;
+}
+
 .profit-positive{color:green;font-weight:bold;}
 .profit-negative{color:red;font-weight:bold;}
 .selected-row{background:#fff3cd !important;}
@@ -78,57 +148,24 @@ z-index:5;
 .text-red { color: red; font-weight: bold; }
 </style>
 </head>
-<div id="quickCalcModal" style="
-display:none;
-position:fixed;
-top:0;left:0;
-width:100%;height:100%;
-background:rgba(0,0,0,0.5);
-z-index:999;
-">
+<div id="quickCalcModal">
+  <div id="quickCalcBox">
 
-<div style="
-background:#fff;
-padding:15px;
-border-radius:8px;
+    <div id="quickCalcHeader">
+      <h3>Tính nhanh</h3>
+      <button onclick="closeQuickCalc()">✕</button>
+    </div>
 
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
+<input id="qc_buy" placeholder="Giá mua" oninput="formatInputNumber(this)">
+<input id="qc_point" placeholder="Hoàn point" oninput="formatInputNumber(this)">
+<input id="qc_sell" placeholder="Giá kai" oninput="formatInputNumber(this)">
 
-width:auto;
-min-width:260px;
-max-width:90vw;
+    <button class="calc-btn" onclick="calculateQuick()">Tính lợi nhuận</button>
 
-box-sizing:border-box;
+    <div id="qc_result"></div>
 
-text-align:left;
-">
-
-<div style="display:flex;align-items:center;justify-content:space-between;">
-    <h3 style="margin:0;">Tính nhanh</h3>
+  </div>
 </div>
-
-Giá mua:<br>
-<input type="number" id="qc_buy"><br>
-
-Hoàn point:<br>
-<input type="number" id="qc_point"><br>
-
-Giá kai:<br>
-<input type="number" id="qc_kai"><br><br>
-
-<button onclick="calculateQuick()">Tính</button>
-<button onclick="closeQuickCalc()">Đóng</button>
-
-<hr>
-
-<div id="qc_result" style="font-weight:bold;"></div>
-
-</div>
-</div>
-
 <body>
 
 <h2>Quản lý</h2>
@@ -338,6 +375,17 @@ return item;
 
 function saveLocal(){ localStorage.setItem("DATA_SAFE",JSON.stringify(data)); }
 
+function formatJP(num){
+  return Number(num || 0).toLocaleString("ja-JP");
+}
+
+function formatInputNumber(input){
+  let value = input.value.replace(/,/g, '');
+
+  if (value === '' || isNaN(value)) return;
+
+  input.value = Number(value).toLocaleString('ja-JP');
+}
 
 function addItem(){
 
@@ -429,20 +477,20 @@ tableBody.innerHTML += `
 <td>${item.account}</td>
 <td>${item.jan}</td>
 <td>${item.name}</td>
-<td>${item.buyPrice}</td>
-<td>${item.point}</td>
-<td>${item.mopy.toFixed(0)}</td>
-<td>${item.quantity}</td>
-<td>${item.kaiBuyPrice}</td>
-<td>${item.sellPrice}</td>
+<td>${formatJP(item.buyPrice)}</td>
+<td>${formatJP(item.point)}</td>
+<td>${formatJP(item.mopy)}</td>
+<td>${formatJP(item.quantity)}</td>
+<td>${formatJP(item.kaiBuyPrice)}</td>
+<td>${formatJP(item.sellPrice)}</td>
 <td>${item.kai}</td>
 <td>${item.note}</td>
 <td class="${item.status==='Chưa bán' ? 'text-red' : ''}">${item.status}</td>
 <td class="${item.expectedProfit<0?'profit-negative':'profit-positive'}">
-${item.expectedProfit} (${expectedPercent}%)
+${formatJP(item.expectedProfit)} (${expectedPercent}%)
 </td>
 <td class="${item.realProfit<0?'profit-negative':'profit-positive'}">
-${item.realProfit} (${realPercent}%)
+${formatJP(item.realProfit)} (${realPercent}%)
 </td>
 </tr>`;
 });
@@ -451,10 +499,10 @@ let percent = totalBuy > 0 ? ((totalReal / totalBuy) * 100).toFixed(1) : 0;
 let percentExpected = totalBuy > 0 ? ((totalExpected / totalBuy) * 100).toFixed(1) : 0;
 
 summary.innerHTML =
-"Tổng Mopy: " + totalMopy.toFixed(0) +
-" | Tổng tiền mua: " + totalBuy +
-" | Tổng LN dự kiến: " + totalExpected + " (" + percentExpected + "%)" +
-" | Tổng LN thực: " + totalReal + " (" + percent + "%)";
+"Tổng Mopy: " + formatJP(totalMopy) +
+" | Tổng tiền mua: " + formatJP(totalBuy) +
+" | Tổng LN dự kiến: " + formatJP(totalExpected) + " (" + percentExpected + "%)" +
+" | Tổng LN thực: " + formatJP(totalReal) + " (" + percent + "%)";
 }
 
 
@@ -773,7 +821,7 @@ document.getElementById("quickCalcModal").style.display="block";
 
 document.getElementById("qc_buy").value = buyPrice.value || "";
 document.getElementById("qc_point").value = point.value || "";
-document.getElementById("qc_kai").value = kaiBuyPrice.value || "";
+document.getElementById("qc_sell").value = kaiBuyPrice.value || "";
 
 document.getElementById("qc_result").innerHTML = "";
 }
@@ -800,19 +848,19 @@ cancelEdit();
 
 function calculateQuick(){
 
-let buy = Number(document.getElementById("qc_buy").value) || 0;
-let pointVal = Number(document.getElementById("qc_point").value) || 0;
-let kaiVal = Number(document.getElementById("qc_kai").value) || 0;
+let buy = parseFloat(document.getElementById("qc_buy").value.replace(/,/g,'')) || 0;
+let point = parseFloat(document.getElementById("qc_point").value.replace(/,/g,'')) || 0;
+let sell = parseFloat(document.getElementById("qc_sell").value.replace(/,/g,'')) || 0;
 
-let realCost = buy - pointVal;
-let profit = kaiVal - realCost;
+let realCost = buy - point;
+let profit = sell - realCost;
 
 let percent = buy > 0 ? ((profit / buy) * 100).toFixed(1) : 0;
 
 let color = profit >= 0 ? "green" : "red";
 
 document.getElementById("qc_result").innerHTML =
-`Lãi: <span style="color:${color}">${profit}</span> (${percent}%)`;
+`Lãi: <span style="color:${color}">${formatJP(profit)}</span> (${percent}%)`;
 
 }
 
